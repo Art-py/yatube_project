@@ -5,12 +5,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
   <h1>{{ group.title }}</h1>
   <p>
     {{ group.description }}
   </p>
-
   {% for post in posts %}
     <article>
       <ul>
