@@ -3,6 +3,7 @@ from .models import Post, Group
 
 SLICE = 10
 
+
 def index(request):
     template = 'posts/index.html'
     posts = Post.objects.select_related('group')[:SLICE]
