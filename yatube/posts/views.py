@@ -18,7 +18,8 @@ def index(request):
 def group_posts(request, slug):
     template = 'posts/group_list.html'
     group = get_object_or_404(Group, slug=slug)
-    posts = Post.objects.filter(group=group).select_related('group')[:SLICE]
+    posts_all = Group.objects.last()
+    posts = posts_all.posts.all()[:SLICE]
     context = {
         'group': group,
         'posts': posts,
