@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from .models import Post, Group
 
-NUMBER_OF_POSTS = 10
+SLICE = 10
 
 
 def index(request):
     template = 'posts/index.html'
-    posts = Post.objects.select_related('group')[:NUMBER_OF_POSTS]
+    posts = Post.objects.select_related('group')[:SLICE]
     title = 'Последние обновления на сайте'
     context = {
         'posts': posts,
@@ -18,8 +18,7 @@ def index(request):
 def group_posts(request, slug):
     template = 'posts/group_list.html'
     group = get_object_or_404(Group, slug=slug)
-    p = Post.objects.filter(group=group)
-    posts = p.select_related('group')[:NUMBER_OF_POSTS]
+    posts = Post.objects.filter(group=group).select_related('group')[:SLICE]
     context = {
         'group': group,
         'posts': posts,
