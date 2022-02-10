@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Tittle не выйдет сегодня ((({% endblock %}
+
+{% block content %}
+{% load user_filters %}
+
+<div class="row justify-content-center">
+  <div class="col-md-8 p-5">
+    <div class="card">
+      <div class="card-header">
+        {% block card-header %}
+            Block-header тоже отсутствует.
+        {% endblock %}
+      </div>
+      <div class="card-body">
+        {% block card-body %}
+          Block-body тоже отсутствует.
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
