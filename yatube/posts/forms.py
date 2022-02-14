@@ -5,7 +5,7 @@ from .models import Post
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ('text', 'group')
+        fields = ('text', 'group', 'image')
         widgets = {
             "text": forms.Textarea(attrs={
                 'class': 'form-control',
@@ -14,5 +14,8 @@ class PostForm(forms.ModelForm):
             }),
             "group": forms.Select(attrs={
                 'class': 'form-control'
-            })
+            }),
+            "image": forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
         }
