@@ -49,3 +49,23 @@ class Post(models.Model):
 
     def __str__(self):
         return self.text[:CHAR_CUT]
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Комментарий',
+        help_text='Оставьте комментарий'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    text = models.TextField(
+        verbose_name='Текст комментария',
+        help_text='Введите текст комментария.'
+    )
+    created = models.DateTimeField(auto_now_add=True)

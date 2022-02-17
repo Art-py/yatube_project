@@ -155,6 +155,7 @@ class TaskPagesTests(TestCase):
 
     def test_pages_context_image(self):
         """Тестирование страниц на наличие картинки в постах"""
+        last_post = 14
         response_list = (
             reverse('posts:index'),
             reverse(
@@ -168,7 +169,7 @@ class TaskPagesTests(TestCase):
             with self.subTest(template=template):
                 response = self.authorized_client.get(template)
                 image_object = response.context['page_obj'][0].image
-                self.assertEqual(image_object, self.post[14].image)
+                self.assertEqual(image_object, self.post[last_post].image)
         # Отдельная страница поста
         template = reverse(
             'posts:post_detail', kwargs={'post_id': self.post[0].id}

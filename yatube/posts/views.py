@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Post, Group, User
 from .utils import ret_pagi
-from .forms import PostForm
+from .forms import PostForm, CommentForm
 
 
 POSTS_CUT = 10
@@ -90,4 +90,16 @@ def post_edit(request, post_id):
         }
         return render(request, 'posts/create_post.html', context)
 
+    return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def add_comment(request, post_id):
+    # Получите пост
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = Post.objects.get(post_id=post_id)
+        comment.save()
     return redirect('posts:post_detail', post_id=post_id)
