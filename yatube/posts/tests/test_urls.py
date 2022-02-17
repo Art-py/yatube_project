@@ -32,6 +32,7 @@ class StaticURLTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_public_page(self):
+        """Доступность страниц: главной, group, profile, posts"""
         static_page = [
             '/',
             f'/group/{self.group.slug}/',
@@ -45,6 +46,7 @@ class StaticURLTests(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_privat_page(self):
+        """Доступность страниц для авторизованных пользователей"""
         static_page = [
             f'/posts/{self.post.pk}/edit/',
             '/create/',
@@ -56,12 +58,12 @@ class StaticURLTests(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_authorized_user_create(self):
-        # Авторизованный пользователь, проверяем только страницу создания.
+        """Доступность страницы создания поста для авторизованного юзера"""
         response = self.authorized_client.get('/create/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_edit_page_author(self):
-        # Проверим что страница редактирования доступна только автору
+        """Доступность страницы редактирования для автора"""
         user = User.objects.create_user(username='Jack_Den')
         post = Post.objects.create(
             author=user,
@@ -80,11 +82,13 @@ class StaticURLTests(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_unknown_page(self):
+        """Неизвестная страница возвращает код 404"""
         page = '/unknown/'
         response = self.guest_client.get(page)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
     def test_urls_uses_correct_template_public_page(self):
+        """Адреса ведут на правильные общедоступные шаблоны"""
         templates_url_names = {
             'posts/index.html': '/',
             'posts/group_list.html': '/group/Test-slug/',
@@ -97,6 +101,7 @@ class StaticURLTests(TestCase):
                 self.assertTemplateUsed(response, template)
 
     def test_urls_uses_correct_template_privat_page(self):
+        """Адреса ведут на правильные приватные шаблоны"""
         templates_url_names = {
             '/create/': 'posts/create_post.html',
             f'/posts/{self.post.pk}/edit/': 'posts/create_post.html',

@@ -1,13 +1,37 @@
+import shutil
+import tempfile
+
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.conf import settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..models import Post, Group
 
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 User = get_user_model()
 
 
+def ret_image():
+    small_gif = (
+        b'\x47\x49\x46\x38\x39\x61\x02\x00'
+        b'\x01\x00\x80\x00\x00\x00\x00\x00'
+        b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+        b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+        b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+        b'\x0A\x00\x3B'
+    )
+    uploaded = SimpleUploadedFile(
+        name='small.gif',
+        content=small_gif,
+        content_type='image/gif'
+    )
+    return uploaded
+
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class TaskCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -19,6 +43,11 @@ class TaskCreateFormTests(TestCase):
             description='Тестовое описание',
         )
 
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+
     def setUp(self):
         # Создаем авторизованный клиент
         self.authorized_client = Client()
@@ -29,11 +58,14 @@ class TaskCreateFormTests(TestCase):
         context = {
             'text': 'Тестовый пост',
             'group': self.group.pk,
+            'image': ret_image(),
         }
         # Отправляем POST-запрос
         response = self.authorized_client.post(
             reverse('posts:post_create'),
-            context)
+            context,
+            follow=True
+        )
         # Проверяем, сработал ли редирект
         self.assertRedirects(response, reverse(
             'posts:profile',
@@ -43,7 +75,8 @@ class TaskCreateFormTests(TestCase):
         self.assertTrue(Post.objects.filter(
             author=self.user,
             text='Тестовый пост',
-            group=self.group.pk
+            group=self.group.pk,
+            image='posts/small.gif'
         ).exists())
 
     def test_edit_post(self):
@@ -51,7 +84,8 @@ class TaskCreateFormTests(TestCase):
         post = Post.objects.create(
             author=self.user,
             text='Очередной тестовый текст который я изменю.',
-            group=self.group
+            group=self.group,
+            image=ret_image(),
         )
         context = {
             'text': 'А вот изменённый текст',

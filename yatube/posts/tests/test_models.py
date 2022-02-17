@@ -24,5 +24,6 @@ class PostGroupModelTest(TestCase):
         )
 
     def test_models_have_correct_object_names(self):
+        """Правильное формирование имени поста, группы."""
         self.assertEqual(self.group.__str__(), self.group.title)
         self.assertEqual(self.post.__str__(), self.post.text[:CHAR_CUT])
