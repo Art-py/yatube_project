@@ -44,10 +44,20 @@ def post_detail(request, post_id):
     cut_str = 30
     post = get_object_or_404(Post, id=post_id)
     count_posts = post.author.posts.count()
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        new_comment = form.save(commit=False)
+        new_comment.author = request.user
+        new_comment.post = post
+        new_comment.save()
+        return redirect('posts:post_detail', post_id=post_id)
+
     context = {
         'cut_str': cut_str,
         'post': post,
-        'count_posts': count_posts
+        'count_posts': count_posts,
+        'comments': post.comments.all(),
+        'form': form
     }
     return render(request, 'posts/post_detail.html', context)
 
@@ -95,7 +105,6 @@ def post_edit(request, post_id):
 
 @login_required
 def add_comment(request, post_id):
-    # Получите пост
     form = CommentForm(request.POST or None)
     if form.is_valid():
         comment = form.save(commit=False)
