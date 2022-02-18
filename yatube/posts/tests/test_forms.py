@@ -34,7 +34,7 @@ def ret_image():
 def ret_test_context_comment(self):
     post = Post.objects.create(
         author=self.user,
-        text=('Тестовый текст поста!'),
+        text='Тестовый текст поста!',
     )
     context = {
         'post': post,
