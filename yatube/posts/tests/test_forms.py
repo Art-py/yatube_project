@@ -7,7 +7,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from ..models import Post, Group
+from ..models import Post, Group, Comment
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -31,6 +31,19 @@ def ret_image():
     return uploaded
 
 
+def ret_test_context_comment(self):
+    post = Post.objects.create(
+        author=self.user,
+        text=('Тестовый текст поста!'),
+    )
+    context = {
+        'post': post,
+        'author': self.user,
+        'text': 'Тестовый комментарий',
+    }
+    return context
+
+
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class TaskCreateFormTests(TestCase):
     @classmethod
@@ -49,6 +62,8 @@ class TaskCreateFormTests(TestCase):
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
+        # Создаем неавторзованный клиент
+        self.guest_client = Client()
         # Создаем авторизованный клиент
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
@@ -105,3 +120,37 @@ class TaskCreateFormTests(TestCase):
             Post.objects.get(author=self.user).text,
             'А вот изменённый текст'
         )
+
+    def test_create_comment(self):
+        """Форма комментария создает комментарий"""
+        context = ret_test_context_comment(self)
+        # Отправляем POST-запрос
+        response = self.authorized_client.post(
+            reverse('posts:add_comment', kwargs={
+                'post_id': context['post'].pk
+            }),
+            context)
+        # Проверяем, сработал ли редирект
+        self.assertRedirects(response, reverse(
+            'posts:post_detail',
+            kwargs={'post_id': context['post'].pk}
+        ))
+        # Проверяем, что создалась запись
+        self.assertTrue(Comment.objects.filter(
+            author=self.user,
+            text='Тестовый комментарий',
+            post=context['post'],
+        ).exists())
+
+    def test_no_add_nonauthorised_user_comment(self):
+        """Неавторизованный пользователь не добавит комментарий"""
+        context = ret_test_context_comment(self)
+        comment_count = Post.objects.count()
+        # Отправляем POST-запрос
+        response = self.guest_client.post(
+            reverse('posts:add_comment', kwargs={
+                'post_id': context['post'].pk
+            }),
+            context)
+        # Проверим что количество комментариев не изменилось.
+        self.assertEqual(Post.objects.count(), comment_count)
