@@ -21,6 +21,7 @@ class StaticURLTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовая группа',
+            group=cls.group,
         )
 
     def setUp(self):
@@ -110,3 +111,8 @@ class StaticURLTests(TestCase):
             with self.subTest(address=address):
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
+
+    def test_custom_404(self):
+        """Неизвестный адрес вернет кастомный шаблон"""
+        response = self.guest_client.get('/unknown/')
+        self.assertTemplateUsed(response, 'core/404.html')

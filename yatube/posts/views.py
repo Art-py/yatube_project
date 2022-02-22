@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect, get_list_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
 
 from .models import Post, Group, User
 from .utils import ret_pagi
@@ -9,6 +10,7 @@ from .forms import PostForm, CommentForm
 POSTS_CUT = 10
 
 
+@cache_page(20, key_prefix='index_page')
 def index(request):
     page_obj = ret_pagi(Post.objects.all(), POSTS_CUT)
     title = 'Последние обновления на сайте'
