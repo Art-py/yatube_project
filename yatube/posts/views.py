@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect, get_list_or_404
 from django.contrib.auth.decorators import login_required
 
 from .models import Post, Group, User
@@ -21,7 +21,7 @@ def index(request):
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    page_obj = ret_pagi(group.posts.all(), POSTS_CUT)
+    page_obj = ret_pagi(get_list_or_404(Post, group=group), POSTS_CUT)
     context = {
         'group': group,
         'page_obj': page_obj.get_page(request.GET.get('page')),
@@ -31,7 +31,7 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    page_obj = ret_pagi(author.posts.all(), POSTS_CUT)
+    page_obj = ret_pagi(get_list_or_404(Post, author=author), POSTS_CUT)
     context = {
         'author': author,
         'page_obj': page_obj.get_page(request.GET.get('page')),
