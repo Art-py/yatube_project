@@ -147,7 +147,7 @@ class TaskCreateFormTests(TestCase):
         context = ret_test_context_comment(self)
         comment_count = Post.objects.count()
         # Отправляем POST-запрос
-        response = self.guest_client.post(
+        self.guest_client.post(
             reverse('posts:add_comment', kwargs={
                 'post_id': context['post'].pk
             }),

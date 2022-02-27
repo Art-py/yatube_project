@@ -2,8 +2,6 @@ from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
-from django.core.cache import cache
-from django.urls import reverse
 
 from ..models import Post, Group
 
@@ -118,16 +116,3 @@ class StaticURLTests(TestCase):
         """Неизвестный адрес вернет кастомный шаблон"""
         response = self.guest_client.get('/unknown/')
         self.assertTemplateUsed(response, 'core/404.html')
-
-    def test_cache_index_page(self):
-        """Тестирование кэша"""
-        cache.clear()
-        response = self.authorized_client.get(reverse('posts:index'))
-        cache_check = response.content
-        post = Post.objects.get(pk=1)
-        post.delete()
-        response = self.authorized_client.get(reverse('posts:index'))
-        self.assertEqual(response.content, cache_check)
-        cache.clear()
-        response = self.authorized_client.get(reverse('posts:index'))
-        self.assertNotEqual(response.content, cache_check)

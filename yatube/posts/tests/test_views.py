@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
@@ -7,6 +8,7 @@ from django.urls import reverse
 from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 
 from ..models import Post, Group
 from ..views import POSTS_CUT
@@ -176,3 +178,81 @@ class TaskPagesTests(TestCase):
         )
         response = self.authorized_client.get(template)
         self.assertEqual(response.context['post'].image, self.post[0].image)
+
+    def tests_follow_unfollow(self):
+        """Тест на подписку пользователя."""
+        user_fol = User.objects.create_user(username='User_follow')
+        authorized_client_follow = Client()
+        authorized_client_follow.force_login(user_fol)
+        # Подписались
+        page_follow = reverse(
+            'posts:profile_follow', kwargs={'username': self.user.username}
+        )
+        response = authorized_client_follow.get(page_follow)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def tests_unfollow(self):
+        """Тест на отписку пользователя."""
+        user_unfol = User.objects.create_user(username='User_unfollow')
+        authorized_client_follow = Client()
+        authorized_client_follow.force_login(user_unfol)
+        # Отписались
+        page_unfollow = reverse(
+            'posts:profile_unfollow', kwargs={'username': self.user.username}
+        )
+        response = authorized_client_follow.get(page_unfollow)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def tests_add_follow_post(self):
+        """Тест количества постов для пользователей"""
+        # Количество постов у неподписанного пользователя.
+        zero = 0
+        num_new_post = 1
+        # Создадим теперь двух авторизованных пользователей.
+        # Этот подпишется
+        user_fol = User.objects.create_user(username='User_follow')
+        authorized_client_follow = Client()
+        authorized_client_follow.force_login(user_fol)
+        # А этот нет
+        user_dont_fol = User.objects.create_user(username='User_unfollow')
+        authorized_client_dont_follow = Client()
+        authorized_client_dont_follow.force_login(user_dont_fol)
+        # Тестируем сразу подписку на пользователя джека
+        # Подписались
+        page_follow = reverse(
+            'posts:profile_follow', kwargs={'username': self.user.username}
+        )
+        authorized_client_follow.get(page_follow)
+        # Создаем пост джеку
+        Post.objects.create(
+            author=self.user,
+            text='Новый пост опубликованный после подписки на Джека.',
+            group=self.group,
+        )
+        # Проверим что количество постов стало побольше у
+        # подписанного пользователя и не изменилось у не подписанного.
+        page_2 = '?page=2'
+        second = COUNT_POSTS - POSTS_CUT + num_new_post
+        response_tuple = (
+            (POSTS_CUT, reverse('posts:follow_index')),
+            (second, reverse('posts:follow_index') + page_2),
+        )
+        for count, template in response_tuple:
+            with self.subTest(template=template):
+                response = authorized_client_follow.get(template)
+                self.assertEqual(len(response.context['page_obj']), count)
+
+        response = authorized_client_dont_follow.get(
+            reverse('posts:follow_index')
+        )
+        self.assertEqual(len(response.context['page_obj']), zero)
+
+    def test_cache_index_page(self):
+        """Тестирование кэша"""
+        cache.clear()
+        response = self.authorized_client.get(reverse('posts:index'))
+        cache_check = response.content
+        post = Post.objects.get(pk=1)
+        post.delete()
+        response = self.authorized_client.get(reverse('posts:index'))
+        self.assertEqual(response.content, cache_check)

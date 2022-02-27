@@ -1,7 +1,10 @@
-from django.shortcuts import render, get_object_or_404, redirect, get_list_or_404
+from django.shortcuts import (render,
+                              get_object_or_404,
+                              redirect,
+                              get_list_or_404)
 from django.contrib.auth.decorators import login_required
 
-from .models import Post, Group, User
+from .models import Post, Group, User, Follow
 from .utils import ret_pagi
 from .forms import PostForm, CommentForm
 
@@ -31,11 +34,15 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    page_obj = ret_pagi(get_list_or_404(Post, author=author), POSTS_CUT)
+    page_obj = ret_pagi(author.posts.all(), POSTS_CUT)
+    following = (request.user.is_authenticated and author.following.filter(
+        user=request.user).exists())
+
     context = {
         'author': author,
         'page_obj': page_obj.get_page(request.GET.get('page')),
         'page_count': page_obj.count,
+        'following': following
     }
     return render(request, 'posts/profile.html', context)
 
@@ -104,3 +111,31 @@ def add_comment(request, post_id):
         comment.post = Post.objects.get(id=post_id)
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    page_obj = ret_pagi(Post.objects.filter(
+        author__following__user=request.user
+    ), POSTS_CUT)
+    title = 'Подписки'
+    context = {
+        'page_obj': page_obj.get_page(request.GET.get('page')),
+        'title': title,
+    }
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    if author != request.user:
+        Follow.objects.get_or_create(user=request.user, author=author)
+    return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    Follow.objects.filter(user=request.user, author=author).delete()
+    return redirect('posts:profile', username=username)
