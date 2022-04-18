@@ -5,7 +5,7 @@ from django.shortcuts import (render,
 from django.contrib.auth.decorators import login_required
 
 from .models import Post, Group, User, Follow
-from .utils import ret_pagi
+from .utils import get_pagi
 from .forms import PostForm, CommentForm
 
 
@@ -13,7 +13,7 @@ POSTS_CUT = 10
 
 
 def index(request):
-    page_obj = ret_pagi(Post.objects.all(), POSTS_CUT)
+    page_obj = get_pagi(Post.objects.all(), POSTS_CUT)
     title = 'Последние обновления на сайте'
     context = {
         'page_obj': page_obj.get_page(request.GET.get('page')),
@@ -24,7 +24,7 @@ def index(request):
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    page_obj = ret_pagi(get_list_or_404(Post, group=group), POSTS_CUT)
+    page_obj = get_pagi(get_list_or_404(Post, group=group), POSTS_CUT)
     context = {
         'group': group,
         'page_obj': page_obj.get_page(request.GET.get('page')),
@@ -34,7 +34,7 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    page_obj = ret_pagi(author.posts.all(), POSTS_CUT)
+    page_obj = get_pagi(author.posts.all(), POSTS_CUT)
     following = (request.user.is_authenticated and author.following.filter(
         user=request.user).exists())
 
@@ -115,7 +115,7 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    page_obj = ret_pagi(Post.objects.filter(
+    page_obj = get_pagi(Post.objects.filter(
         author__following__user=request.user
     ), POSTS_CUT)
     title = 'Подписки'
